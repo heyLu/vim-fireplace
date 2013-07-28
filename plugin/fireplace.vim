@@ -60,9 +60,9 @@ function! fireplace#ns_complete(A, L, P) abort
   let matches = []
   for dir in fireplace#client().path()
     if dir =~# '\.jar$'
-      let files = filter(fireplace#jar_contents(dir), 'v:val =~# "\\.clj$"')
+      let files = filter(fireplace#jar_contents(dir), 'v:val =~# "\\.cljs\\=$"')
     else
-      let files = split(glob(dir."/**/*.clj", 1), "\n")
+      let files = glob(dir."/**/*.clj", 1) + glob(dir."/**/*.cljs", 1)
       call map(files, 'v:val[strlen(dir)+1 : -1]')
     endif
     let matches += files
@@ -901,7 +901,7 @@ nnoremap <silent> <Plug>FireplaceDtabjump :<C-U>exe <SID>Edit('tabedit', expand(
 augroup fireplace_source
   autocmd!
   autocmd FileType clojure setlocal includeexpr=tr(v:fname,'.-','/_')
-  autocmd FileType clojure setlocal suffixesadd=.clj,.java
+  autocmd FileType clojure setlocal suffixesadd=.clj,.cljs,.java
   autocmd FileType clojure setlocal define=^\\s*(def\\w*
   autocmd FileType clojure command! -bar -buffer -nargs=1 -complete=customlist,fireplace#eval_complete Djump  :exe s:Edit('edit', <q-args>)
   autocmd FileType clojure command! -bar -buffer -nargs=1 -complete=customlist,fireplace#eval_complete Dsplit :exe s:Edit('split', <q-args>)
@@ -927,6 +927,7 @@ function! fireplace#findfile(path) abort
 
   let path = a:path
 
+  " TODO: can we fix this in a simple way?
   if path !~# '[/.]' && path =~# '^\k\+$'
     let aliascmd = printf(cmd,
           \ '(if-let [ns ((ns-aliases *ns*) '.s:qsym(path).')]' .
